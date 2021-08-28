@@ -1,0 +1,72 @@
+name: "Deploy Sample App"
+
+on:
+  push:
+    branches: [ master ]
+
+env:
+  PROJECT_PATH: VersionUpdater.Net.Sample/VersionUpdater.Net.Sample.csproj
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+    steps:
+
+      - uses: actions/checkout@v2
+        name: Checkout code
+
+      - uses: actions/setup-dotnet@v1
+        name: Setup Dotnet
+        with:
+          dotnet-version: 5.0.x
+
+      - name: Restore Project
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build Project
+        run: dotnet build ${{ env.PROJECT_PATH }} -c Release --no-restore
+
+      - name: Publish Project
+        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -o appPublish --self-contained false -r win-x64 -p:PublishSingleFile=true -p:PublishReadyToRun=true
+
+      - uses: Amadevus/pwsh-script@v2
+        name: Find Current Version
+        id: GetCurrentVersion
+        with:
+          script: |
+                  $xml = [Xml] (Get-Content ${{ env.PROJECT_PATH }})
+                  $updateRequirement = $xml.Project.PropertyGroup.UpdateRequired
+                  $version = $xml.Project.PropertyGroup.Version
+                  echo $version-$updateRequirement
+                  
+      - uses: rishabhgupta/split-by@v1
+        name: Split Version and Update Requirement
+        id: SplitOperation
+        with:
+          string: ${{ steps.GetCurrentVersion.outputs.result }}
+          split-by: '-'
+
+      - uses: actions/create-release@v1
+        name: Create Release
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.GetCurrentVersion.outputs.result }}
+          release_name: v${{ steps.SplitOperation.outputs._0 }}
+      
+      - uses: thedoctor0/zip-release@master
+        name: Create Zip File
+        with:
+          path: ./appPublish/*
+          filename: appPublish.zip
+
+      - uses: actions/upload-release-asset@v1
+        name: Upload Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./appPublish.zip
+          asset_name: appPublish.zip
+          asset_content_type: application/zip
