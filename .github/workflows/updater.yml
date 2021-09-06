@@ -11,28 +11,64 @@ env:
 jobs:
 
   find_latest_version:
-      runs-on: ubuntu-latest
-      outputs:
-        current_version: ${{ steps.SplitOperation.outputs._0 }}
-      steps:
+    runs-on: ubuntu-latest
+    outputs:
+      latest_version: ${{ steps.SplitOperation.outputs._0 }}
+    steps:
 
-        - uses: rez0n/actions-github-release@main
-          name: Get Latest Version 
-          id: latest_version
-          env:
-            token: ${{ secrets.GITHUB_TOKEN }}
-            repository: ${{ env.REPOSITORY }}
-            type: "stable"
+      - uses: rez0n/actions-github-release@main
+        name: Get Latest Version 
+        id: latest_version
+        env:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ env.REPOSITORY }}
+          type: "stable"
 
-        - uses: rishabhgupta/split-by@v1
-          name: Split Version and Update Requirement
-          id: SplitOperation
-          with:
-            string: ${{ steps.latest_version.outputs.release }}
-            split-by: '-'
+      - uses: rishabhgupta/split-by@v1
+        name: Split Version and Update Requirement
+        id: SplitOperation
+        with:
+          string: ${{ steps.latest_version.outputs.release }}
+          split-by: '-'
+
+  find_current_version:
+    runs-on: windows-latest
+    outputs:
+      current_version: ${{ steps.SplitOperation.outputs._0 }}
+      tag_name: ${{ steps.GetCurrentVersion.outputs.result }}
+    steps:
+
+      - uses: actions/checkout@v2
+        name: Checkout code
+
+      - uses: actions/setup-dotnet@v1
+        name: Setup Dotnet
+        with:
+          dotnet-version: 5.0.x
+
+      - name: Restore Project
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - uses: Amadevus/pwsh-script@v2
+        name: Find Current Version
+        id: GetCurrentVersion
+        with:
+          script: |
+                  $xml = [Xml] (Get-Content ${{ env.PROJECT_PATH }})
+                  $updateRequirement = $xml.Project.PropertyGroup.UpdateRequired
+                  $version = $xml.Project.PropertyGroup.Version
+                  echo $version-$updateRequirement
+
+      - uses: rishabhgupta/split-by@v1
+        name: Split Version and Update Requirement
+        id: SplitOperation
+        with:
+          string: ${{ steps.GetCurrentVersion.outputs.result }}
+          split-by: '-'
 
   deploy:
-    needs: find_latest_version
+    needs: [find_current_version, find_latest_version]
+    if: ${{ needs.find_current_version.outputs.current_version > needs.find_latest_version.outputs.latest_version }}
     runs-on: windows-latest
     steps:
 
@@ -53,42 +89,22 @@ jobs:
       - name: Publish Project
         run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -o appPublish --self-contained false -r win-x64 -p:PublishSingleFile=true -p:PublishReadyToRun=true
 
-      - uses: Amadevus/pwsh-script@v2
-        name: Find Current Version
-        id: GetCurrentVersion
-        with:
-          script: |
-                  $xml = [Xml] (Get-Content ${{ env.PROJECT_PATH }})
-                  $updateRequirement = $xml.Project.PropertyGroup.UpdateRequired
-                  $version = $xml.Project.PropertyGroup.Version
-                  echo $version-$updateRequirement
-                  
-      - uses: rishabhgupta/split-by@v1
-        name: Split Version and Update Requirement
-        id: SplitOperation
-        with:
-          string: ${{ steps.GetCurrentVersion.outputs.result }}
-          split-by: '-'
-
       - uses: actions/create-release@v1
-        if: ${{ steps.SplitOperation.outputs._0 > needs.find_latest_version.outputs.current_version }}
         name: Create Release
         id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.GetCurrentVersion.outputs.result }}
-          release_name: v${{ steps.SplitOperation.outputs._0 }}
+          tag_name: ${{ needs.find_current_version.outputs.tag_name }}
+          release_name: v${{ needs.find_current_version.outputs.current_version }}
       
       - uses: thedoctor0/zip-release@master
-        if: ${{ steps.SplitOperation.outputs._0 > needs.find_latest_version.outputs.current_version }}
         name: Create Zip File
         with:
           path: ./appPublish/*
           filename: appPublish.zip
 
       - uses: actions/upload-release-asset@v1
-        if: ${{ steps.SplitOperation.outputs._0 > needs.find_latest_version.outputs.current_version }}
         name: Upload Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
