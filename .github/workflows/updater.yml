@@ -32,6 +32,7 @@ jobs:
             split-by: '-'
 
   deploy:
+    needs: find_latest_version
     runs-on: windows-latest
     steps:
 
