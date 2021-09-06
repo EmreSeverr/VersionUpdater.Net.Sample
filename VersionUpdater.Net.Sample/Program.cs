@@ -18,17 +18,17 @@ namespace VersionUpdater.Net.Sample
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            await Updater.ApplyVersionUpdaterAsync(p =>
-            {
-                p.GithubAuthenticationType = GithubAuthenticationType.Anonymous;
-                p.Owner = "EmreSeverr";
-                p.RepositoryName = "VersionUpdater.Net.Sample";
-                p.ScheduleConfig = new ScheduleConfig
-                {
-                    CronExpression = @"* * * * *",//Every 1 minute.
+            var a = await Updater.ApplyVersionUpdaterAsync(p =>
+              {
+                  p.GithubAuthenticationType = GithubAuthenticationType.Anonymous;
+                  p.Owner = "EmreSeverr";
+                  p.RepositoryName = "VersionUpdater.Net.Sample";
+                  p.ScheduleConfig = new ScheduleConfig
+                  {
+                      CronExpression = @"* * * * *",//Every 1 minute.
                     TimeZoneInfo = TimeZoneInfo.Local
-                };
-            }).ConfigureAwait(false);
+                  };
+              }).ConfigureAwait(false);
             Application.Run(new FormVersion());
         }
     }

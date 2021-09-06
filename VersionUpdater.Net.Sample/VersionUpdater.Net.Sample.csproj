@@ -5,13 +5,13 @@
     <TargetFramework>net5.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
-    <Version>1.0.7</Version>
-    <UpdateRequired>true</UpdateRequired>
+    <Version>1.0.6</Version>
+    <UpdateRequired>false</UpdateRequired>
     <UpdateDescription>New Update.#New Release.#New Version.</UpdateDescription>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="VersionUpdater.Net" Version="1.1.2" />
+    <PackageReference Include="VersionUpdater.Net" Version="2.0.5" />
   </ItemGroup>
 
 </Project>
