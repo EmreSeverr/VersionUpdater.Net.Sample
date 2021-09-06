@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using VersionUpdater.Net.Helpers;
+using VersionUpdater.Net.Helpers.CronJob.Models.Concrate;
 using VersionUpdater.Net.Helpers.Enums;
 
 namespace VersionUpdater.Net.Sample
@@ -22,6 +23,11 @@ namespace VersionUpdater.Net.Sample
                 p.GithubAuthenticationType = GithubAuthenticationType.Anonymous;
                 p.Owner = "EmreSeverr";
                 p.RepositoryName = "VersionUpdater.Net.Sample";
+                p.ScheduleConfig = new ScheduleConfig
+                {
+                    CronExpression = "0 0 0/1 1/1 * ? *",//Every 1 hour.
+                    TimeZoneInfo = TimeZoneInfo.Local
+                };
             }).ConfigureAwait(false);
             Application.Run(new FormVersion());
         }
