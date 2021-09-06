@@ -87,7 +87,7 @@ jobs:
           filename: appPublish.zip
 
       - uses: actions/upload-release-asset@v1
-          if: ${{ steps.SplitOperation.outputs._0 > needs.find_latest_version.outputs.current_version }}
+        if: ${{ steps.SplitOperation.outputs._0 > needs.find_latest_version.outputs.current_version }}
         name: Upload Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
