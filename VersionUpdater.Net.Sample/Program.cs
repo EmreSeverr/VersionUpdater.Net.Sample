@@ -25,7 +25,7 @@ namespace VersionUpdater.Net.Sample
                 p.RepositoryName = "VersionUpdater.Net.Sample";
                 p.ScheduleConfig = new ScheduleConfig
                 {
-                    CronExpression = "0 0 0/1 1/1 * ? *",//Every 1 hour.
+                    CronExpression = @"* * * * *",//Every 1 minute.
                     TimeZoneInfo = TimeZoneInfo.Local
                 };
             }).ConfigureAwait(false);
