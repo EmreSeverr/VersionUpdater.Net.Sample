@@ -10,26 +10,26 @@ env:
 
 jobs:
 
- find_latest_version:
-    runs-on: ubuntu-latest
-    outputs:
-      current_version: ${{ steps.SplitOperation.outputs._0 }}
-    steps:
+  find_latest_version:
+      runs-on: ubuntu-latest
+      outputs:
+        current_version: ${{ steps.SplitOperation.outputs._0 }}
+      steps:
 
-      - uses: rez0n/actions-github-release@main
-        name: Get Latest Version 
-        id: latest_version
-        env:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ env.REPOSITORY }}
-          type: "stable"
+        - uses: rez0n/actions-github-release@main
+          name: Get Latest Version 
+          id: latest_version
+          env:
+            token: ${{ secrets.GITHUB_TOKEN }}
+            repository: ${{ env.REPOSITORY }}
+            type: "stable"
 
-      - uses: rishabhgupta/split-by@v1
-        name: Split Version and Update Requirement
-        id: SplitOperation
-        with:
-          string: ${{ steps.latest_version.outputs.release }}
-          split-by: '-'
+        - uses: rishabhgupta/split-by@v1
+          name: Split Version and Update Requirement
+          id: SplitOperation
+          with:
+            string: ${{ steps.latest_version.outputs.release }}
+            split-by: '-'
 
   deploy:
     runs-on: windows-latest
@@ -87,7 +87,7 @@ jobs:
           filename: appPublish.zip
 
       - uses: actions/upload-release-asset@v1
-        if: ${{ steps.SplitOperation.outputs._0 > needs.find_latest_version.outputs.current_version }}
+          if: ${{ steps.SplitOperation.outputs._0 > needs.find_latest_version.outputs.current_version }}
         name: Upload Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
